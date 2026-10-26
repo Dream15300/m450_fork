@@ -5,17 +5,45 @@ public sealed class ReservationServiceTests
 {
     // Entfernt Ignore jeweils erst, wenn ihr den Test implementiert habt.
     // Die Beispiele für Stub, Spy und Moq stehen in TestDoubleExamples.cs.
-
+    // Aufgabe 1:
     [TestMethod]
-    [Ignore("TODO: eigenen Verfügbarkeits-Stub schreiben")]
     public void Reserve_WithEnoughSeats_ReturnsTrue()
     {
         // Arrange: Stub mit 3 freien Plätzen, Repository mit erfolgreichem Speichern,
         //          eigener Sender-Spy und ReservationService.
+        var availabilityStub = new SeatAvailabilityStub(3);
+        var repositoryStub = new ReservationRepositoryStub();
+        var confirmationSenderSpy = new ConfirmationSenderSpy();
+        var reservationService = new ReservationService(availabilityStub, repositoryStub, confirmationSenderSpy); // Constructor Dependency Injection
+
         // Act:     2 Plätze reservieren.
+        var result = reservationService.Reserve("ivan@test.ch", "EVENT123", 2);
+
         // Assert:  Ergebnis ist true.
-        throw new NotImplementedException();
+        Assert.IsTrue(result, "Reservation sollte gelingen, wenn genügend Plätze verfügbar sind.");
     }
+    // Aufgabe 1 zugehörig: Stubs
+    private sealed class ReservationRepositoryStub : IReservationRepository
+    {
+        public bool TrySave(Reservation reservation)
+        {
+            return true; // Immer erfolgreich speichern.
+        }
+    }
+    // Aufgabe 1 zugehörig: Spy
+    private sealed class ConfirmationSenderSpy : IConfirmationSender
+    {
+        public bool WasCalled { get; private set; } = false;
+        public void Send(Reservation res)
+        {
+            WasCalled = true; // Aufruf aufzeichnen.
+        }
+    }
+
+
+
+
+
 
     [TestMethod]
     [Ignore("TODO: fehlende Verfügbarkeit prüfen")]
@@ -27,6 +55,11 @@ public sealed class ReservationServiceTests
         throw new NotImplementedException();
     }
 
+
+
+
+
+
     [TestMethod]
     [Ignore("TODO: Grenzfall testen")]
     public void Reserve_WithExactlyEnoughSeats_Succeeds()
@@ -36,6 +69,11 @@ public sealed class ReservationServiceTests
         // Assert:  Ergebnis ist true.
         throw new NotImplementedException();
     }
+
+
+
+
+
 
     [TestMethod]
     [Ignore("TODO: Platzanzahl 0 testen")]
@@ -47,6 +85,11 @@ public sealed class ReservationServiceTests
         throw new NotImplementedException();
     }
 
+
+
+
+
+
     [TestMethod]
     [Ignore("TODO: negative Platzanzahl testen")]
     public void Reserve_WithNegativeSeats_ThrowsBeforeCallingDependencies()
@@ -56,6 +99,11 @@ public sealed class ReservationServiceTests
         // Assert:  ArgumentOutOfRangeException; keine Abhängigkeit wurde aufgerufen.
         throw new NotImplementedException();
     }
+
+
+
+
+
 
     [TestMethod]
     [Ignore("TODO: leeren Veranstaltungscode testen")]
@@ -67,6 +115,11 @@ public sealed class ReservationServiceTests
         throw new NotImplementedException();
     }
 
+
+
+
+
+
     [TestMethod]
     [Ignore("TODO: E-Mail-Adresse aus Leerzeichen testen")]
     public void Reserve_WithWhitespaceEmail_ThrowsBeforeCallingDependencies()
@@ -76,6 +129,11 @@ public sealed class ReservationServiceTests
         // Assert:  ArgumentException; keine Abhängigkeit wurde aufgerufen.
         throw new NotImplementedException();
     }
+
+
+
+
+
 
     [TestMethod]
     [Ignore("TODO: fehlgeschlagenes Speichern testen")]
@@ -87,6 +145,11 @@ public sealed class ReservationServiceTests
         throw new NotImplementedException();
     }
 
+
+
+
+
+
     [TestMethod]
     [Ignore("TODO: Moq für fehlenden Speicherversuch verwenden")]
     public void Reserve_WithTooFewSeats_DoesNotCallRepository()
@@ -97,6 +160,12 @@ public sealed class ReservationServiceTests
         throw new NotImplementedException();
     }
 
+
+
+
+
+
+
     [TestMethod]
     [Ignore("Fortgeschrittene: ReserveBatch zuerst implementieren")]
     public void ReserveBatch_WhenCombinedSeatsExceedCapacity_DoesNotSaveOrSend()
@@ -105,5 +174,24 @@ public sealed class ReservationServiceTests
         // Act:     Nach Implementierung des Batch-Verfahrens beide zusammen reservieren.
         // Assert:  Ergebnis ist false; kein Batch-Speichern und keine Bestätigung.
         throw new NotImplementedException();
+    }
+
+
+
+
+
+
+
+    private sealed class SeatAvailabilityStub : ISeatAvailability
+    {
+        private readonly int _availableSeats; // speichert Anzahl der verfügbaren Plätze, die der Stub zurückgeben soll
+        public SeatAvailabilityStub(int availableSeats)
+        {
+            _availableSeats = availableSeats;
+        }
+        public int GetAvailableSeats(string eventCode)
+        {
+            return _availableSeats;
+        }
     }
 }
