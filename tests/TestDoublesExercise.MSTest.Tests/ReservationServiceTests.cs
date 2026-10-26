@@ -22,23 +22,7 @@ public sealed class ReservationServiceTests
         // Assert:  Ergebnis ist true.
         Assert.IsTrue(result, "Reservation sollte gelingen, wenn genügend Plätze verfügbar sind.");
     }
-    // Aufgabe 1 zugehörig: Stubs
-    private sealed class ReservationRepositoryStub : IReservationRepository
-    {
-        public bool TrySave(Reservation reservation)
-        {
-            return true; // Immer erfolgreich speichern.
-        }
-    }
-    // Aufgabe 1 zugehörig: Spy
-    private sealed class ConfirmationSenderSpy : IConfirmationSender
-    {
-        public bool WasCalled { get; private set; } = false;
-        public void Send(Reservation res)
-        {
-            WasCalled = true; // Aufruf aufzeichnen.
-        }
-    }
+
 
 
 
@@ -46,15 +30,22 @@ public sealed class ReservationServiceTests
 
 
     [TestMethod]
-    [Ignore("TODO: fehlende Verfügbarkeit prüfen")]
     public void Reserve_WithTooFewSeats_DoesNotSaveOrSend()
     {
         // Arrange: Stub mit 1 freiem Platz und Doubles für Repository und Sender.
-        // Act:     2 Plätze reservieren.
-        // Assert:  Ergebnis ist false; weder Speichern noch Senden wurde aufgerufen.
-        throw new NotImplementedException();
-    }
+        var availabilityStub = new SeatAvailabilityStub(1);
+        var repositoryStub = new ReservationRepositoryStub();
+        var confirmationSenderSpy = new ConfirmationSenderSpy();
+        var reservationService = new ReservationService(availabilityStub, repositoryStub, confirmationSenderSpy);
 
+        // Act:     2 Plätze reservieren.
+        var result = reservationService.Reserve("ivan@test.ch", "EVENT123", 2);
+
+        // Assert:  Ergebnis ist false; weder Speichern noch Senden wurde aufgerufen.
+        Assert.IsFalse(result, "Reservation sollte fehlschlagen, wenn nicht genügend Plätze verfügbar sind.");
+        Assert.AreEqual(0, repositoryStub.SaveCalls, "Repository sollte nicht aufgerufen werden.");
+        Assert.IsFalse(confirmationSenderSpy.WasCalled, "Sender sollte nicht aufgerufen werden.");
+    }
 
 
 
@@ -192,6 +183,25 @@ public sealed class ReservationServiceTests
         public int GetAvailableSeats(string eventCode)
         {
             return _availableSeats;
+        }
+    }
+
+    private sealed class ReservationRepositoryStub : IReservationRepository
+    {
+        public int SaveCalls { get; private set; }
+
+        public bool TrySave(Reservation res)
+        {
+            SaveCalls++;
+            return true; // Immer erfolgreich speichern.
+        }
+    }
+    private sealed class ConfirmationSenderSpy : IConfirmationSender
+    {
+        public bool WasCalled { get; private set; } = false;
+        public void Send(Reservation res)
+        {
+            WasCalled = true; // Aufruf aufzeichnen.
         }
     }
 }
