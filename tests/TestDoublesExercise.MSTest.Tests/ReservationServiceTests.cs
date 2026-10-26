@@ -50,30 +50,39 @@ public sealed class ReservationServiceTests
 
 
 
-
+    // TODO: Grenzfall testen
     [TestMethod]
-    [Ignore("TODO: Grenzfall testen")]
     public void Reserve_WithExactlyEnoughSeats_Succeeds()
     {
         // Arrange: Stub mit genau 2 freien Plätzen.
+        var availabilityStub = new SeatAvailabilityStub(2);
+        var repositoryStub = new ReservationRepositoryStub();
+        var confirmationSenderSpy = new ConfirmationSenderSpy();
+        var reservationService = new ReservationService(availabilityStub, repositoryStub, confirmationSenderSpy);
+
         // Act:     2 Plätze reservieren.
+        var result = reservationService.Reserve("ivan@test.ch", "EVENT123", 2);
+
         // Assert:  Ergebnis ist true.
-        throw new NotImplementedException();
+        Assert.IsTrue(result, "Reservation sollte gelingen, wenn genau genügend Plätze verfügbar sind.");
     }
 
 
 
 
 
-
+    // TODO: Platzanzahl 0 testen
     [TestMethod]
-    [Ignore("TODO: Platzanzahl 0 testen")]
     public void Reserve_WithZeroSeats_ThrowsBeforeCallingDependencies()
     {
         // Arrange: Doubles, deren Aufrufe sich prüfen lassen.
-        // Act:     0 Plätze reservieren.
-        // Assert:  ArgumentOutOfRangeException; keine Abhängigkeit wurde aufgerufen.
-        throw new NotImplementedException();
+        var availabilityStub = new SeatAvailabilityStub(5);
+        var repositoryStub = new ReservationRepositoryStub();
+        var confirmationSenderSpy = new ConfirmationSenderSpy();
+        var reservationService = new ReservationService(availabilityStub, repositoryStub, confirmationSenderSpy);
+
+        // Act + Assert: 0 Plätze reservieren. ArgumentOutOfRangeException; keine Abhängigkeit wurde aufgerufen.
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => reservationService.Reserve("ivan@test.ch", "EVENT123", 0));
     }
 
 
