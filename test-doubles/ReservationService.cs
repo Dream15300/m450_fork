@@ -12,6 +12,11 @@ public interface IReservationRepository
 {
     // Gibt false zurück, wenn die Reservierung nicht gespeichert werden konnte.
     bool TrySave(Reservation reservation);
+    bool TrySaveBatch(IReadOnlyList<Reservation> reservations)
+    {
+        throw new NotSupportedException(
+            "Batch-Speicherung wird nicht unterstützt."); // erhält eine Standardimplementierung, damit die Schnittstelle nicht geändert werden muss, wenn eine Implementierung diese Methode nicht unterstützt.
+    }
 }
 
 public interface IConfirmationSender
@@ -66,4 +71,57 @@ public sealed class ReservationService
         _sender.Send(reservation);
         return true;
     }
+
+    // Von KI machen lassen, hab sie nicht selber geschafft
+    public bool ReserveBatch(IReadOnlyList<Reservation> requests)
+    {
+        // 1. Eingaben überprüfen
+        ArgumentNullException.ThrowIfNull(requests);
+
+        if (requests.Count == 0)
+            throw new ArgumentException("Keine Reservierungen vorhanden.");
+
+        var totals = new Dictionary<string, int>();
+
+        foreach (var request in requests)
+        {
+            if (string.IsNullOrWhiteSpace(request.CustomerEmail))
+                throw new ArgumentException("Ungültige E-Mail-Adresse.");
+
+            if (string.IsNullOrWhiteSpace(request.EventCode))
+                throw new ArgumentException("Ungültiger Veranstaltungscode.");
+
+            if (request.SeatCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(requests));
+
+            // Plätze pro Veranstaltung zusammenzählen
+            if (!totals.ContainsKey(request.EventCode))
+                totals[request.EventCode] = 0;
+
+            totals[request.EventCode] = checked(
+                totals[request.EventCode] + request.SeatCount);
+        }
+
+        // 2. Verfügbarkeit prüfen
+        foreach (var entry in totals)
+        {
+            int available = _availability.GetAvailableSeats(entry.Key);
+
+            if (available < entry.Value)
+                return false;
+        }
+
+        // 3. Alle Reservierungen gemeinsam speichern
+        if (!_repository.TrySaveBatch(requests))
+            return false;
+
+        // 4. Bestätigungen versenden
+        foreach (var request in requests)
+        {
+            _sender.Send(request);
+        }
+
+        return true;
+    }
+
 }
